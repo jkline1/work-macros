@@ -1,3 +1,3 @@
 # work-macros
 
-When this is complete it will contain a few simple macros I wrote for work.
+This contains a few simple macros I wrote for work, with a combination of recorded and manually edited code.
