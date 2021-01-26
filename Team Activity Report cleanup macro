@@ -1,0 +1,134 @@
+
+'The macro iterates through a monthly activity log with separate tabs for each day, conditionally formats individual lines based on whether the COL has signed
+'off yet or not, and spits out a list of clients and dates to help the COLs quickly find entries they still need to work on.
+Sub TarCleanupPublic()
+Dim Entries() As Variant, ecount As Integer, TabName() As Variant
+Dim LastRow As Integer
+Dim COLSig As String
+Dim Current As Worksheet
+Dim StartCell As Range
+Dim Printcount As Integer
+
+
+
+
+
+
+    For Each Current In Worksheets
+     'this adds the conditional formatting to make signed lines green and other lines red, also coloring tabs green. 
+     'the tabs will be switched to red later if they have entries that need filled out
+            
+   
+        Current.Tab.ColorIndex = 4
+        Current.Activate
+        If Current.Name = "TAR entries that need review" Then
+            Application.DisplayAlerts = False
+            Current.Delete
+            Application.DisplayAlerts = True
+           'Column A is where the client name lives, and it might be empty due to technical issues.
+           'Column G is where the COL signs off on the activity report and confirms it's okay.
+        ElseIf Not IsEmpty(Current.Range("A4").Value) Then
+            ActiveSheet.Rows("4:4").Select
+            ActiveSheet.Range(Selection, Selection.End(xlDown)).Select
+            Selection.FormatConditions.Add Type:=xlExpression, Formula1:= _
+            "=AND($A4<>"""",$G4="""")"
+            Selection.FormatConditions(Selection.FormatConditions.Count).SetFirstPriority
+            With Selection.FormatConditions(1).Interior
+                .PatternColorIndex = xlAutomatic
+                .Color = 255
+                .TintAndShade = 0
+            End With
+            Selection.FormatConditions(1).StopIfTrue = False
+            Selection.FormatConditions.Add Type:=xlExpression, Formula1:= _
+            "=AND($A4<>"""",$G4<>"""")"
+            Selection.FormatConditions(Selection.FormatConditions.Count).SetFirstPriority
+            With Selection.FormatConditions(1).Interior
+                .PatternColorIndex = xlAutomatic
+                .ThemeColor = xlThemeColorAccent6
+                .TintAndShade = 0.399945066682943
+            End With
+            Selection.FormatConditions(1).StopIfTrue = False
+        
+            
+        'getting the length for the arrays in which we are going to store the entries that need COL review, also colorcoding tabs
+            
+            'Current.Tab.ColorIndex = 4
+            If Not IsEmpty(Current.Range("A4").Value) Then
+                Set StartCell = Current.Cells.Range("A4")
+                LastRow = StartCell.SpecialCells(xlCellTypeLastCell).Row
+                
+                For Each c In Current.Range("A4:A" & LastRow).Cells
+                    COLSig = c.Offset(0, 6).Value
+                 
+                        'checking that the line contains an entry and the COL hasn't added anything in the g column
+                    If Not IsEmpty(c.Value) And c.Value <> "CO_ID" And COLSig = "" Then
+                        
+                        Current.Tab.ColorIndex = 3
+                        ecount = ecount + 1
+            
+                    End If
+                Next
+            End If
+        End If
+    Next
+    
+
+    
+    ReDim Entries(ecount)
+    ReDim TabName(ecount)
+    
+    'Now we are actually gathering bad client names and dates. Note that the tab name will always be the date. The client names are on separate lines within the tab.
+  
+    ecount = 0
+    For Each Current In Worksheets
+        If Not IsEmpty(Current.Range("A4").Value) Then
+            Set StartCell = Current.Cells.Range("A4")
+            LastRow = StartCell.SpecialCells(xlCellTypeLastCell).Row
+            For Each c In Current.Range("A4:A" & LastRow).Cells
+                COLSig = c.Offset(0, 6).Value
+                If Not IsEmpty(c.Value) And c.Value <> "CO_ID" And COLSig = "" Then
+                    Entries(ecount) = c.Value
+                    TabName(ecount) = Current.Name
+                    
+                    ecount = ecount + 1
+                End If
+            Next
+        End If
+        If Current.Name = "TAR entries that need review" Then
+            Application.DisplayAlerts = False
+            Current.Delete
+            Application.DisplayAlerts = True
+        End If
+        
+    Next
+    With ActiveWorkbook
+        .Sheets.Add(After:=.Sheets(.Sheets.Count)).Name = "TAR entries that need review"
+        Range("A1").Value = "TAR entries that need review"
+    End With
+
+    For Printcount = 0 To ecount - 1
+        Range("A" & Printcount + 3).Value = Entries(Printcount)
+        Range("B" & Printcount + 3).Value = TabName(Printcount)
+    Next
+    
+    'Finally, some recorded macro code to dedupe the final array.
+    
+        Range("A3:B3").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    ActiveWindow.SmallScroll Down:=-9
+    ActiveSheet.Range("$A$3:$B$9999").RemoveDuplicates Columns:=Array(1, 2), Header _
+        :=xlNo
+    Range("A3:A10").Select
+    ActiveWorkbook.Worksheets("TAR entries that need review").Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("TAR entries that need review").Sort.SortFields.Add _
+        Key:=Range("A3"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption _
+        :=xlSortNormal
+    With ActiveWorkbook.Worksheets("TAR entries that need review").Sort
+        .SetRange Range("A3:B9999")
+        .Header = xlNo
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+End Sub
