@@ -1,0 +1,99 @@
+'This is a hack of an existing macro I was passed during orientation to automatically create a pivot table for a file I review every day.
+'Later on I needed to do regular review of a more complex file so I re-recorded the portion related to the structure of the new file.
+'I kept the borrowed code from the original macro because (maybe you already know this if you're making decisions about hiring me) recording a pivot table macro
+'doesn't work unless you edit the first steps with the code below.
+
+Sub DataDumpPivot()
+'PURPOSE: Creates a brand new Pivot table on a new worksheet from data in the ActiveSheet
+'Source: www.TheSpreadsheetGuru.com - Yeah, I stole this code...sue me.
+
+Dim sht As Worksheet
+Dim pvtCache As PivotCache
+Dim pvt As PivotTable
+Dim StartPvt As String
+Dim SrcData As String
+
+'Determine the data range you want to pivot
+  SrcData = ActiveSheet.Name & "!" & "R1C1:R1048576C86"
+
+'Create a new worksheet
+  Set sht = Sheets.Add
+
+'Where do you want Pivot Table to start?
+  StartPvt = sht.Name & "!" & "R3C1"
+
+'Create Pivot Cache from Source Data
+  Set pvtCache = ActiveWorkbook.PivotCaches.Create( _
+    SourceType:=xlDatabase, _
+    SourceData:=SrcData)
+
+'Create Pivot table from Pivot Cache
+  Set pvt = pvtCache.CreatePivotTable( _
+    TableDestination:=StartPvt, _
+    TableName:="PivotTable1")
+    
+        With ActiveSheet.PivotTables("PivotTable1").PivotCache
+        .RefreshOnFileOpen = False
+        .MissingItemsLimit = xlMissingItemsDefault
+    End With
+    ActiveSheet.PivotTables("PivotTable1").RepeatAllLabels xlRepeatLabels
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("VE_ID")
+        .Orientation = xlPageField
+        .Position = 1
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("BL_ID")
+        .Orientation = xlPageField
+        .Position = 1
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("PC_ID")
+        .Orientation = xlPageField
+        .Position = 2
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("PU_ID")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("PL_ID")
+        .Orientation = xlRowField
+        .Position = 2
+    End With
+    ActiveSheet.PivotTables("PivotTable1").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable1").PivotFields("MB_AMT_TOTAL"), "Count of MB_AMT_TOTAL", xlCount
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Count of MB_AMT_TOTAL" _
+        )
+        .Caption = "Sum of MB_AMT_TOTAL"
+        .Function = xlSum
+    End With
+    ActiveSheet.PivotTables("PivotTable1").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable1").PivotFields("MB_ASO1"), "Count of MB_ASO1", xlCount
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Count of MB_ASO1")
+        .Caption = "Sum of MB_ASO1"
+        .Function = xlSum
+    End With
+    ActiveSheet.PivotTables("PivotTable1").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable1").PivotFields("MB_ASO2"), "Count of MB_ASO2", xlCount
+    ActiveSheet.PivotTables("PivotTable1").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable1").PivotFields("MB_ASO3"), "Count of MB_ASO3", xlCount
+    ActiveSheet.PivotTables("PivotTable1").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable1").PivotFields("MB_ASO4"), "Count of MB_ASO4", xlCount
+    ActiveSheet.PivotTables("PivotTable1").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable1").PivotFields("MB_ASO5"), "Count of MB_ASO5", xlCount
+    ActiveWindow.SmallScroll Down:=6
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Count of MB_ASO2")
+        .Caption = "Sum of MB_ASO2"
+        .Function = xlSum
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Count of MB_ASO3")
+        .Caption = "Sum of MB_ASO3"
+        .Function = xlSum
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Count of MB_ASO4")
+        .Caption = "Sum of MB_ASO4"
+        .Function = xlSum
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Count of MB_ASO5")
+        .Caption = "Sum of MB_ASO5"
+        .Function = xlSum
+    End With
+End Sub
+
